@@ -18,6 +18,20 @@
 \begin{document}
 
 \maketitle
+\section{Time Series Data}
+Time series data comes in different forms, from prices to temperatures to people as a function of time. Recall one type of time series data relevant to the concept of system control, position over time. In the system identification problem, we have a state transition equation:
+
+\begin{equation}\label{1}
+X_{t+1} = AX_{t} + B\mu_{t}
+\end{equation}
+
+What is crucial to understand is that the only observable output from the system are the series of $X_{t}$'s as well as the inputs placed in to the system, the $\mu$'s. In the system identification problem, we use a series of inputs and outputs to estimate and refine these estimations for the model parameters A and B. \\
+
+We find that this modeling is not always fully applicable to all time series data. For instance, in modeling and forecasting stock prices over time, there is not a well-defined user input, $\mu_{t}$. Also, there may be additional previous system states contributing to the current observation instead of only the immediately previous observation. In these instances, a more appropriate model is sought after to express the behavior of the time series data. \\
+
+In these notes, we will explain how ARIMA and moving average models are more suitable to specific instances of time series data than the basic system identification model, and how the parameters can be estimated through a combination of least squares, used in the traditional system identification process, and iterative maximum likelihood expectation, the pattern used by K-means approach to clustering taught in earlier weeks of this course.
+
+\maketitle
 \section{Trends}
 One commonly encountered time series component is a trend. Trends encompass datasets with non-repetitive generally increasing or decreasing values. An example of a trend is a child's weight as a function of time.
 \subsection{Trend Models}
@@ -27,7 +41,7 @@ X_t=m_t+Z_t
 \end{equation}
 where $X_t$ is the observation, $m_t$ is the deterministic trend function and $Z_t$ is white noise. Random variables are white noise if they have zero mean and finite variance. This note will cover several methods for fitting \ref{1} to data with trends.
 \subsubsection{Linear Regression}
-A simple technique would be to perform linear regression on the raw data or a feature augmented data set.
+A simple technique would be to perform linear regression on the raw data or a feature augmented data set. If the underlying $m_{t}$ trend is of a polynomial nature, using linear regression can be used to quite accurately fit the time series data. However, if this observation doesn't hold true, using the following moving average techniques can provide a better estimation for each $m_{t}$ using neighboring values.
 \subsubsection{Simple Moving Average (SMA)}
 SMA averages the previous data points with the current sample to reduce noise. For a $2p$-sample moving average, we calculate:
 \begin{equation}\label{2}
@@ -121,7 +135,7 @@ Notice the mean and variance of the data are consistent across time.
 Notice how both the mean and variance of the sequence increase over time.
 
 \section{Moving Average (MA) Models \protect\footnote{Moving average models are different from the moving average (\emph{SMA}).}}
-\textit{Let $Z_t, Z_{t-1}, \ldots, Z_{t-q}$ denote a white noise sequence and $\mu$ denote the mean of the sequence. The textbf{moving average model} of order q, \textbf{MA(q)}, is defined as:
+\textit{Let $Z_t, Z_{t-1}, \ldots, Z_{t-q}$ denote a white noise sequence and $\mu$ denote the mean of the sequence. The \textbf{moving average model} of order q, \textbf{MA(q)}, is defined as:
 \begin{align}\label{ma model}
     X_t &= \mu + Z_t + \theta_1 Z_{t-1} + \theta_2 Z_{t-2} + \ldots + \theta_q Z_{t-q}\nonumber\\
     &= \mu + \sum_{j=0}^q \theta_j Z_{t-j} \qquad \text{where } \theta_0=1\nonumber\\
@@ -129,7 +143,7 @@ Notice how both the mean and variance of the sequence increase over time.
 \end{align}
 where $\theta_1, \theta_{2}, \ldots, \theta_{q}$ are the parameters of the model.\\
 }
-We get (\ref{ma model}) from the second line by remembering the mean of white noise is 0. Moving average models allow for forecasting based on past stochastic terms.
+We get (\ref{ma model}) from the second line by assuming a zero mean process. Moving average models allow for forecasting based on past stochastic terms.
 \subsection{Weak Stationarity of an MA(q) Model}
 \subsubsection{\emph{ACVF} and \emph{ACF}}
 The \emph{acvf} is derived as follows:
@@ -188,9 +202,10 @@ where $\pi(B)=\sum_{j=0}^{\infty} \pi_j B^j$ and $\sum_{j=0}^{\infty} \lvert \pi
 \textit{Let $Z_t, Z_{t-1}, \ldots, Z_{t-q}$ denote a white noise sequence and $c$ a constant. The \textbf{autoregressive model} of order p, \textbf{AR(p)}, is defined as:
 \begin{align}\label{ar model}
     X_t &= c + Z_t + \phi_1 X_{t-1} + \phi_2 X_{t-2} + \ldots + \phi_p X_{t-p}\nonumber\\
-    &= c + Z_t + \sum_{j=0}^p \phi_j X_{t-j} \qquad \text{where } \phi_p \neq 0
+    &= c + Z_t + \sum_{j=0}^p \phi_j X_{t-j} \qquad \text{where } \phi_p \neq 0\nonumber\\
+    &= Z_t + \sum_{j=0}^p \phi_j X_{t-j} \qquad \text{where } \phi_p \neq 0
 \end{align}
-where $\phi_1, \ldots, \phi_p$ are parameters of the model.\\
+where $\phi_1, \ldots, \phi_p$ are parameters of the model and (\ref{ar model}) is a zero mean \textbf{AR(p)} process.\\\\
 }
 Autoregressive models predict future observations directly using past observations.
 \subsection{Autoregressive Operator}
@@ -217,7 +232,7 @@ We can rewrite (\ref{ar1}) as:
     &= \frac{1}{1-\phi B} Z_t
 \end{align}
 Notice we have the sum of a geometric series for $\lvert \phi \rvert < 1$:
-\begin{align}
+\begin{align}\label{ar less 1}
     X_t &= (1 + \phi B + \phi^2 B^2 + \ldots)Z_t\nonumber\\
     &= \sum_{j=0}^{\infty} \phi^j Z_{t-j}
 \end{align}
@@ -227,21 +242,164 @@ Now consider $\lvert \phi \rvert > 1$. With some clever algebraic manipulation w
     &= -\frac{Z_{t+1}}{\phi} -\frac{Z_{t+2}}{\phi^2}-\ldots\nonumber\\
     &= - \sum_{j=1}^{\infty}\frac{Z_{t+j}}{\phi^j}.
 \end{align}
-We see for this case that $X_t$ depends on future stochastic values, which usually does not work for forecasting. For an AR(1) model, a unique stationary solution is causal when $\lvert \phi \rvert < 1$ because it only depends on present and past values of $\{Z_t\}$. An AR(1) model with $\lvert \phi \rvert > 1$ is non-causal because it depends on future values. An exercise to ensure understanding is to show why no stationary solution exists for $\lvert \phi \rvert=1$.\\
-\textit{We define an AR(p) model as \textbf{causal} if $\phi(z)\neq 0 \text{ for } \lvert z \rvert \leq 1$.}\\
-Similar to invertibility for MA(q) models,\\
-\textit{An AR(p) model is causal iff it can be written as
+We see for this case that $X_t$ depends on future stochastic values, which usually does not work for forecasting. For an AR(1) model, a unique stationary solution is causal when $\lvert \phi \rvert < 1$ because it only depends on present and past values of $\{Z_t\}$. An AR(1) model with $\lvert \phi \rvert > 1$ is non-causal because it depends on future values. An exercise to ensure understanding is to show why no stationary solution exists for $\lvert \phi \rvert=1$.\\\\
+\textit{We define an AR(p) model as \textbf{causal} if $\phi(z)\neq 0 \text{ for } \lvert z \rvert > 1$.}\\\\
+Essentially, since $\phi(z)$ can be interpreted as a polynomial (\ref{ar poly}), $z$ plays the role as the roots of the polynomial. If the roots of an AR(p) process are not $1$, the process is stationary. Similar to invertibility for MA(q) models,\\\\
+\textit{an AR(p) model is causal iff it can be written as
 \begin{align}\label{causal}
     X_t &=\psi(B)Z_t\nonumber\\
     &= \sum_{j=0}^{\infty}\psi_j Z_{t-j}
 \end{align}
 where $\psi(B)=\sum_{j=0}^{\infty}\psi_j B^j$ and $\sum_{j=0}^{\infty}\lvert \psi_j \rvert < \infty$ and $\psi_0=1$.}
+\subsection{Yule-Walker Equations}
+Given a zero mean and causal AR(p) process $\{X_t\}$ defined as (\ref{ar model}), we can try to solve for its parameters. Let us begin by multiplying (\ref{ar model}) by $X_{t-1}$ and taking the expectation to obtain:
+\begin{align}\label{yule-walker 1}
+    \mathbb{E}[X_t X_{t-1}] &= \sum_{j=1}^p \phi_j \mathbb{E} [X_{t-j} X_{t-1}] + \mathbb{E}[Z_t X_{t-1}] \nonumber\\
+    &= \sum_{j=1}^p \phi_j \mathbb{E} [X_{t-j} X_{t-1}]
+\end{align}
+where $\mathbb{E}[Z_t X_{t-1}]$ is $0$ because $Z_t$ is uncorrelated with previous values of the process. We have just derived the Yule-Walker equation for \emph{lag}. We repeat this derivation for \emph{lag 2, $\ldots,$ lag p}. As an exercise, derive the Yule-Walker equation for \emph{lag p}. The following is the generalized equation:
+\begin{align}\label{yule-walker p}
+    \mathbb{E}[X_t X_{t-k}] &= \sum_{j=0}^p \phi_j \mathbb{E} [X_{t-j} X_{t-k}] + \mathbb{E}[Z_t X_{t-k}] \nonumber\\
+    &= \sum_{j=0}^p \phi_j \mathbb{E} [X_{t-j} X_{t-k}]
+\end{align}
+for $k \in [1,\ldots, p]$. Using $r_l$ for $\mathbb{E}[X_{t-l} X_{t-k}]$, (\ref{yule-walker p}) simplifies to:
+\begin{equation}\label{yule walker simplified}
+    r_l = \sum_{j=1}^p \phi_j r_{j-l}
+\end{equation}
+We can then reconfigure the $p$ equations into a $p\times p$ matrix multiplication:
+\begin{equation}
+    \underbrace{\begin{bmatrix}
+        r_1\\
+        r_2\\
+        \vdots\\
+        r_{p-1}\\
+        r_p
+    \end{bmatrix}}_{\textbf{r}}
+    =
+    \underbrace{\begin{bmatrix}
+        r_0 & r_1 &\ldots & r_{p-2} & r_{p-1}\\
+        r_1 & r_2 &\ldots & r_{p-3} & r_{p-2}\\
+        &  & \vdots & &\\
+        r_{p-2} & r_{p-3} & \ldots & r_2 & r_1\\
+        r_{p-1} & r_{p-2} & \ldots & r_1 & r_0
+    \end{bmatrix}}_{\textbf{R}}
+    \underbrace{\begin{bmatrix}
+        \phi_1 \\
+        \phi_2 \\
+        \vdots\\
+        \phi_{p-1}\\
+        \phi_p
+    \end{bmatrix}}_{\textbf{$\Phi$}}\nonumber
+\end{equation}
+We can simplify further using compact matrix notation:
+\begin{equation}\label{yule walker matrix}
+    \textbf{R$\Phi$}=\textbf{r}.
+\end{equation}
+We know \textbf{R} is full rank and symmetric, so we can invert \textbf{R} to solve for \textbf{$\Phi$}:
+\begin{equation}
+    \hat{\textbf{$\Phi$}} = \textbf{R$^{-1}$r.}
+\end{equation}
 
-\subsection{Weak Stationarity of an AR(p) Model}
-
-
+\section{ARMA Models}
+\textit{Let $Z_t, Z_{t-1}, \ldots, Z_{t-q}$ denote a white noise sequence. The \textbf{AutoRegressive Moving Average model} of order (p, q), \textbf{ARMA(p, q)} is defined as:
+\begin{align}\label{arma}
+    \phi(B)X_t &= \theta(B)Z_t \nonumber\\
+    X_t - \phi_1 X_{t-1} - \ldots - \phi_p(X_{t-p}) &= Z_t + \theta_1 Z_{t-1} + \ldots + \theta_q Z_{t-q}
+\end{align}
+where $\phi(B)$ and $\theta(B)$ are the AR and MA operators from (\ref{ar operator}) and (\ref{moving average operator}) with parameters $\phi_1, \ldots, \phi_p,$ $\theta_1, \ldots, \theta_q$ where $\phi_p, \theta_q \neq 0.$
+}\\\\
+ARMA(p, q) processes allow us to model more complex data sets while retaining the properties of the individual processes. We can rearrange (\ref{arma}) to isolate $X_t$:
+\begin{equation}\label{arma isolate}
+    X_t = \phi_1 X_{t-1} + \ldots + \phi_p(X_{t-p}) + Z_t + \theta_1 Z_{t-1} + \ldots + \theta_q Z_{t-q}.
+\end{equation}
+ These are the parameters to obtain models discussed earlier:
+ \begin{enumerate}
+     \item \textbf{White Noise}: ARMA(0, 0) $\Longrightarrow \phi(z)=1$ and $\theta(z)=1$
+     \item \textbf{Moving Average}: ARMA(0, q) $\Longrightarrow \phi(z)=1$ and $\theta(z)=1+\theta_1 z + \ldots + \theta_q z^q$
+     \item \textbf{Autoregressive}: ARMA(p, 0) $\Longrightarrow \phi(z)=1 - \phi_1z - \ldots - \phi_pz^p$ and $\theta(z)=1$
+ \end{enumerate}
+\subsection{Invertibility}
+Let us take a closer look at (\ref{ar less 1}). We notice that it resembles an ARMA(0, $\infty$) model with $\theta_j=\phi^j$:
+\begin{align}\label{arma equivalence}
+    \sum_{j=0}^{\infty} \phi^j Z_{t-j} &= \sum_{j=0}^{\infty} \theta_j Z_{t-j}
+\end{align}
+when $\lvert \phi \rvert < 1$. Therefore, we can invert an ARMA(1, 0) process to an ARMA(0, $\infty$) process. More generally, \\\\
+\textit{an ARMA(p, 0) process, $\phi(B)X_t=Z_t$, can be inverted to an ARMA(0, $\infty$) process, $X_t=\theta(B)Z_t$ if all $\lambda_i$ in 
+\begin{align}\label{arma inversion}
+    1-\phi_1B-\ldots-\phi_pB^p&=(1-\lambda_1B)(1-\lambda_2B)\ldots(1-\lambda_pB)\nonumber\nonumber\\
+    &= \theta_1(B)\theta_2(B)\ldots \theta_p(B)
+\end{align}
+have magnitudes less than $1$.\\\\
+}
+For an ARMA(2, 0) process, we can then solve:
+\begin{align}\label{arma psi derivation}
+    \theta_1(B)\theta_2(B)\ldots \theta_p(B) &= (1+\lambda_1B+\lambda_1B^2+\ldots) (1+\lambda_2B+\lambda_2B^2+\ldots) \nonumber\\
+    &= 1+(\lambda_1+\lambda_2)B+(\lambda_1^2+\lambda_1\lambda_2+\lambda_2^2)B^2+\ldots\nonumber\\
+    &=\sum_{k=0}^{\infty}(\sum_{j=0}^k \lambda_1^j\lambda_2^{k-j})B^k\\
+    &= \psi(B)\nonumber\\
+\end{align}
+where $\psi_k=\sum_{j=0}^k \lambda_1^j\lambda_2^{k-j}$. To derive a general method for ARMA(p, q) to ARMA(0, q) inversion, we look at (\ref{arma equivalence}). Manipulating this, we get the unique solution form of an ARMA(p, q) process:
+\begin{align}\label{arma psi}
+    X_t &= \frac{\theta(B)Z_t}{\phi(B)}\nonumber\\
+    &= \psi(B)Z_t
+\end{align}
+where we have a new ARMA(0, q) process with coefficients $\psi_k$. To calculate the values of $\psi_k$, we rearrange (\ref{arma psi}) to obtain $\theta(B)=\phi(B)\psi(B)$. We can then match the corresponding coefficients for the same powers of $B$. To test for understanding, calculate the inversion for an ARMA(1, 1) process.\\
+Invertible processes are useful because we can invert an MA process to an AR process to find $Z_t$, which are non-observable, using the past values of $X_t$.
+\subsection{Causality}
+\textit{A process has a stationary solution of the form ARMA(p, q) iff (\ref{ar poly}), $\phi(z)$, is not equal to $0$ for all $\lvert z \rvert = 1$}\\\\
+Similar to an ARMA(p, 0) model, \textit{ARMA(p, q) models describe a causal process if (\ref{causal}) and its constraints hold true.}
+\subsection{Redundant Parameters}
+Cancelling out common factors is crucial because we might otherwise fit an ARMA(1, 1) model to white noise, or as in the following example, fit a higher order model to a simpler process.
+\subsubsection{Example}
+Consider a process:
+\begin{align}\label{example redundant}
+    X_t - 0.12X_{t-1}-0.36X_{t-2} &= Z_t - 1.6Z_{t-1}+0.6Z_{t-2}\nonumber\\
+    (1-0.1B-0.42B^2)X_t &= (1+1.1.5B+0.54B^2)Z_t.
+\end{align}
+Naturally we think this is an ARMA(2, 2) process. However, we need to check for redundant parameters in our models. Therefore, we factor(\ref{example redundant}) the operator polynomials:
+\begin{align}\label{reduced example}
+    (1-0.7z)(1+0.6z) &= (1+0.9z)(1+0.6z)\nonumber\\
+    (1-0.7z) &= (1+0.9z)
+\end{align}
+where we divided by $(1+0.6z)$, the common factor. It turns out our process is actually an ARMA(1, 1) model. \\\\
+Our model is causal because:
+\begin{equation}
+    \phi(z) = 1-0.7z = 0 \qquad \text{when } z=10/7,
+\end{equation}
+which has magnitude larger than 1 or $\lambda_1 < 1$. This model is also invertible because:
+\begin{equation}
+    \theta(z) = 1+0.9z=0 \qquad \text{when } z=-10/9,
+\end{equation}
+which also has a magnitude larger than 1 or $\lambda_2 < 1$.\\\\
+To find the unique solution, we must invert the ARMA(1, 1) model into an ARMA(0, $\infty$) model. Consequently, we need to calculate the coefficients $\psi_k$. For this ARMA(1, 1) process, we have:
+\begin{align}\label{arma 1,1}
+    1 + 0.9 z &= (1-0.7 z)(\psi_0+\psi_1 z +\ldots)\nonumber\\
+    &= \psi_0 + (\psi_1-0.7\psi_0)z + (\psi_2-0.7\psi_1)z^2+\ldots\nonumber
+\end{align}
+Now we match coefficients for $z^k$:
+\begin{align}
+    1 &= \psi_0\nonumber\\
+    0.9 &= \psi_1-0.7\psi_0\nonumber\\
+    0&=\psi_j-0.7\psi_{j-1} \qquad \text{for } j\geq 2.\nonumber
+\end{align}
+We can then solve this system of equations using matrices, but we will manually solve in this example.
+\begin{align}
+    \psi_0 &= 1\nonumber\\
+    \psi_1 &= 0.7 + 0.9=1.6\nonumber\\
+    \psi_j &= (0.7)^{j-1}(0.7 + 0.9)=(0.7)^{j-1}(1.6) \qquad \text{for } j \geq2\nonumber
+\end{align}
+We now have the unique, stationary solution for $\{X_t\}$:
+\begin{align}
+    X_t &= \sum_{j=0}^{\infty} \psi_j Z_{t-j} \nonumber\\
+    &=Z_t + 1.6\sum_{j=0}^{\infty}(0.7)^{j-1}Z_{t-j}.\nonumber
+\end{align}
 \section{References}
 \url{https://en.wikipedia.org/wiki/White\_noise}\\
 \url{https://www.machinelearningplus.com/machine-learning/bias-variance-tradeoff/}\\
-\url{https://people.duke.edu/~rnau/411diff.htm}
+\url{https://people.duke.edu/~rnau/411diff.htm}\\
+\url{https://www.stat.tamu.edu/~suhasini/teaching673/chapter3.pdf}\\
+\url{http://www.maths.qmul.ac.uk/~bb/TimeSeries/TS_Chapter6_1.pdf}\\
+\url{https://www.asc.ohio-state.edu/de-jong.8/note2.pdf}\\
+\url{https://math.unice.fr/~frapetti/CorsoP/Chapitre_4_IMEA_1.pdf}\\
+\url{https://www-jstor-org.libproxy.berkeley.edu/stable/pdf/4615673.pdf?refreqid=excelsior%3A640726649d0edf661655f0d5d3a3e167}
 \end{document}
