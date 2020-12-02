@@ -29,7 +29,7 @@ What is crucial to understand is that the only observable output from the system
 
 We find that this modeling is not always fully applicable to all time series data. For instance, in modeling and forecasting stock prices over time, there is not a well-defined user input, $\mu_{t}$. Also, there may be additional previous system states contributing to the current observation instead of only the immediately previous observation. In these instances, a more appropriate model is sought after to express the behavior of the time series data. \\
 
-In these notes, we will explain how ARIMA and moving average models are more suitable to specific instances of time series data than the basic system identification model, and how the parameters can be estimated through a combination of least squares, used in the traditional system identification process, and iterative maximum likelihood expectation, the pattern used by K-means approach to clustering taught in earlier weeks of this course.
+In these notes, we will explain how ARIMA and moving average models are more suitable to specific instances of time series data than the basic system identification model, and how the parameters can be estimated through a combination of least squares, used in the traditional system identification process, and iterative maximum likelihood expectation, the pattern used by $k$-means approach to clustering taught in earlier weeks of this course.
 
 \maketitle
 \section{Trends}
@@ -110,14 +110,35 @@ From condition 2. we realize that the covariance of two random variables only on
 \begin{equation}\label{acvf}
     K_{XX}(\tau) = K_{XX}(t, t+\tau)
 \end{equation}
+We know the covariances of uncorrelated samples:
+\begin{equation}
+    \text{Cov}(X_t, X_s) = \begin{cases}
+        \sigma_z^2\qquad &\text{if } \, t=s\\
+        0 \qquad &\text{otherwise.}
+    \end{cases}\nonumber
+\end{equation}
+Likewise, stationary white noise has \emph{acvf}:
+\begin{equation}
+    K_{XX}(\tau) = \begin{cases}
+        \sigma_z^2\qquad &\text{if } \, \tau=0\\
+        0 \qquad &\text{otherwise.}
+    \end{cases}\nonumber
+\end{equation}
 \subsubsection{Autocorrelation Function \emph{(acf)}}
 The \emph{acf} is defined as:
 \begin{equation}\label{acf}
-    \rho(t, s) = \frac{K_{XX}(t, s)}{\sqrt{\text{Var}(X_t), \text{Var}(X_s}}\nonumber
+    \rho(t, s) = \frac{K_{XX}(t, s)}{\sqrt{\text{Var}(X_t), \text{Var}(X_s)}}\nonumber
 \end{equation}
 which can then be simplified to:
 \begin{equation}\label{acf}
-    \rho(\tau) = \frac{K_{XX}(\tau)}{K_{XX}(0)}
+    \rho(\tau) = \frac{K_{XX}(\tau)}{K_{XX}(0)}.
+\end{equation}
+The \emph{acf} of a white noise process is:
+\begin{equation}
+    \rho(\tau) = \begin{cases}
+        1\qquad &\text{if } \, \tau=0\\
+        0 \qquad &\text{otherwise.}
+    \end{cases}\nonumber
 \end{equation}
 \begin{figure}[H]
     \centering
@@ -190,7 +211,7 @@ Consider an MA(1) model with acf:
 \begin{equation}
     \rho(1)=\frac{\theta}{1 + \theta^2}\nonumber
 \end{equation}
-For any value of $\theta$, $1/\theta$ gives the same autocorrelation. Therefore, there is no unique solution for the parameters of an MA(1) model. To enforce a unique solution, we impose a theoretical restriction to only consider MA(1) models with $\lvert \theta \rvert < 1$. This condition is called \emph{invertibility}. More broadly, \\
+For any value of $\theta$, $1/\theta$ gives the same autocorrelation. Therefore, there is no unique solution for the parameters of an MA(1) model. To enforce a unique solution, we impose a theoretical restriction to only consider MA(1) models with $\lvert \theta \rvert < 1$. Essentially, $\theta$ must lie within the unit circle. This condition is called \emph{invertibility}. More broadly, \\
 \textit{An MA(q) model $X_t=\theta(B)Z_t$ is invertible iff it can be written as
 \begin{align}\label{invertible}
     Z_t&=\pi(B)X_t\nonumber\\
@@ -244,7 +265,7 @@ Now consider $\lvert \phi \rvert > 1$. With some clever algebraic manipulation w
 \end{align}
 We see for this case that $X_t$ depends on future stochastic values, which usually does not work for forecasting. For an AR(1) model, a unique stationary solution is causal when $\lvert \phi \rvert < 1$ because it only depends on present and past values of $\{Z_t\}$. An AR(1) model with $\lvert \phi \rvert > 1$ is non-causal because it depends on future values. An exercise to ensure understanding is to show why no stationary solution exists for $\lvert \phi \rvert=1$.\\\\
 \textit{We define an AR(p) model as \textbf{causal} if $\phi(z)\neq 0 \text{ for } \lvert z \rvert > 1$.}\\\\
-Essentially, since $\phi(z)$ can be interpreted as a polynomial (\ref{ar poly}), $z$ plays the role as the roots of the polynomial. If the roots of an AR(p) process are not $1$, the process is stationary. Similar to invertibility for MA(q) models,\\\\
+Essentially, $z$ must lie outside the complex unit circle. Equivalently, $\phi$ must lie within the complex unit circle, similar to $\theta$ for an MA model. since $\phi(z)$ can be interpreted as a polynomial (\ref{ar poly}), $z$ plays the role as the roots of the polynomial. If the roots of an AR(p) process are not $1$, the process is stationary. Similar to invertibility for MA(q) models,\\\\
 \textit{an AR(p) model is causal iff it can be written as
 \begin{align}\label{causal}
     X_t &=\psi(B)Z_t\nonumber\\
@@ -257,17 +278,17 @@ Given a zero mean and causal AR(p) process $\{X_t\}$ defined as (\ref{ar model})
     \mathbb{E}[X_t X_{t-1}] &= \sum_{j=1}^p \phi_j \mathbb{E} [X_{t-j} X_{t-1}] + \mathbb{E}[Z_t X_{t-1}] \nonumber\\
     &= \sum_{j=1}^p \phi_j \mathbb{E} [X_{t-j} X_{t-1}]
 \end{align}
-where $\mathbb{E}[Z_t X_{t-1}]$ is $0$ because $Z_t$ is uncorrelated with previous values of the process. We have just derived the Yule-Walker equation for \emph{lag}. We repeat this derivation for \emph{lag 2, $\ldots,$ lag p}. As an exercise, derive the Yule-Walker equation for \emph{lag p}. The following is the generalized equation:
+where $\mathbb{E}[Z_t X_{t-1}]$ is $0$ because $Z_t$ is uncorrelated with previous values of the process. We have just derived the Yule-Walker equation for \emph{lag 1}. We repeat this derivation for \emph{lag 2, $\ldots,$ lag p}. As an exercise, derive the Yule-Walker equation for \emph{lag p}. The following is the generalized equation:
 \begin{align}\label{yule-walker p}
     \mathbb{E}[X_t X_{t-k}] &= \sum_{j=0}^p \phi_j \mathbb{E} [X_{t-j} X_{t-k}] + \mathbb{E}[Z_t X_{t-k}] \nonumber\\
     &= \sum_{j=0}^p \phi_j \mathbb{E} [X_{t-j} X_{t-k}]
 \end{align}
-for $k \in [1,\ldots, p]$. Using $r_l$ for $\mathbb{E}[X_{t-l} X_{t-k}]$, (\ref{yule-walker p}) simplifies to:
+for $k \in [1,\ldots, p]$. Note $r_{-l} = r_l$. Using $r_l$ for $\mathbb{E}[X_{t-l} X_{t-k}]$, (\ref{yule-walker p}) simplifies to:
 \begin{equation}\label{yule walker simplified}
     r_l = \sum_{j=1}^p \phi_j r_{j-l}
 \end{equation}
 We can then reconfigure the $p$ equations into a $p\times p$ matrix multiplication:
-\begin{equation}
+\begin{equation}\label{yule-walker matrix}
     \underbrace{\begin{bmatrix}
         r_1\\
         r_2\\
@@ -289,7 +310,7 @@ We can then reconfigure the $p$ equations into a $p\times p$ matrix multiplicati
         \vdots\\
         \phi_{p-1}\\
         \phi_p
-    \end{bmatrix}}_{\textbf{$\Phi$}}\nonumber
+    \end{bmatrix}}_{\textbf{$\Phi$}}
 \end{equation}
 We can simplify further using compact matrix notation:
 \begin{equation}\label{yule walker matrix}
@@ -299,6 +320,7 @@ We know \textbf{R} is full rank and symmetric, so we can invert \textbf{R} to so
 \begin{equation}
     \hat{\textbf{$\Phi$}} = \textbf{R$^{-1}$r.}
 \end{equation}
+\textbf{R} is also known as the \textbf{covariance matrix} of $X$.
 
 \section{ARMA Models}
 \textit{Let $Z_t, Z_{t-1}, \ldots, Z_{t-q}$ denote a white noise sequence. The \textbf{AutoRegressive Moving Average model} of order (p, q), \textbf{ARMA(p, q)} is defined as:
@@ -329,7 +351,7 @@ when $\lvert \phi \rvert < 1$. Therefore, we can invert an ARMA(1, 0) process to
     1-\phi_1B-\ldots-\phi_pB^p&=(1-\lambda_1B)(1-\lambda_2B)\ldots(1-\lambda_pB)\nonumber\nonumber\\
     &= \theta_1(B)\theta_2(B)\ldots \theta_p(B)
 \end{align}
-have magnitudes less than $1$.\\\\
+have magnitudes less than $1$ or lie within the complex unit circle.\\\\
 }
 For an ARMA(2, 0) process, we can then solve:
 \begin{align}\label{arma psi derivation}
@@ -356,7 +378,7 @@ Consider a process:
     X_t - 0.12X_{t-1}-0.36X_{t-2} &= Z_t - 1.6Z_{t-1}+0.6Z_{t-2}\nonumber\\
     (1-0.1B-0.42B^2)X_t &= (1+1.1.5B+0.54B^2)Z_t.
 \end{align}
-Naturally we think this is an ARMA(2, 2) process. However, we need to check for redundant parameters in our models. Therefore, we factor(\ref{example redundant}) the operator polynomials:
+Naturally we think this is an ARMA(2, 2) process. However, we need to check for redundant parameters in our models. Therefore, we factor (\ref{example redundant}) the operator polynomials:
 \begin{align}\label{reduced example}
     (1-0.7z)(1+0.6z) &= (1+0.9z)(1+0.6z)\nonumber\\
     (1-0.7z) &= (1+0.9z)
@@ -393,13 +415,118 @@ We now have the unique, stationary solution for $\{X_t\}$:
     X_t &= \sum_{j=0}^{\infty} \psi_j Z_{t-j} \nonumber\\
     &=Z_t + 1.6\sum_{j=0}^{\infty}(0.7)^{j-1}Z_{t-j}.\nonumber
 \end{align}
+\subsection{\emph{ACVF} and \emph{ACF} of ARMA Processes}
+From now on, we will use invertible, causal, and stationary ARMA processes when referring to ARMA processes. We will cover several approaches to compute the \emph{acvf} and \emph{acf} of ARMA processes.
+\subsubsection{Polynomial Division}
+Remember an ARMA process can be written as (\ref{arma psi}), which expands to:
+\begin{equation}\label{arma psi expanded}
+    X_t = \psi_0 Z_t + \psi_1 Z_{t-1} + \ldots
+\end{equation}
+We can directly calculate the \emph{acvf} as:
+\begin{align}\label{arma acvf direct}
+    K_{XX}(\tau)&=cov(X_t, X_{t+\tau})\nonumber\\
+    &=\sigma_Z^2 \sum_{j=0}^{\infty} \psi_j \psi_{j+\tau} \qquad \text{for } \tau \geq 0
+\end{align}
+where $\sigma_Z^2$ is the variance of $Z_t$. The \emph{acf} is then:
+\begin{equation}
+    \rho(\tau) = \frac{K_{XX}(\tau)}{K_{XX}(0)}.
+\end{equation}
+%Maybe insert example if have time
+\subsubsection{Difference Equations}
+Difference equations represent recursive functions or processes. In fact, we have seen them before in these notes, e.g. in Yule-Walker equations. Now let us derive the \emph{acvf} for an ARMA(p, q) process. For any $k\geq0$:
+\begin{align}
+    \text{Cov}(\theta(B)Z_t, X_{t-k})z&=\text{Cov}(\phi(B)X_t,X_{t-k}) \label{equate covariances}\\
+    &= \text{Cov}(X_t-\phi_1X_{t-1}-\ldots-\phi_pX_{t-p}, X_{t-k})\nonumber\\
+    &=\text{Cov}(X_t,X_{t-k})-\phi_1\text{Cov}(X_{t-1}, X_{t-k})-\ldots-\phi_p \text{Cov}(X_{t-p}, X_{t-k})\nonumber\\
+    &= K_{XX}(k) - \phi_1K_{XX}(k-1)-\ldots-\phi_p K_{XX}(k-p). \label{phi expanded equate covariance}
+\end{align}
+We can use (\ref{arma psi}) to expand the left hand side of (\ref{equate covariances}):
+\begin{align}\label{theta expanded equate covariances}
+    \text{Cov}(\phi(B)X_t,X_{t-k}) &= \text{Cov}(Z_t+\theta_1Z_{t-1} +\ldots+\theta_qZ_{t-q}, \psi_0Z_{t-k} + \psi_1Z_{t-k-1}+\ldots)\nonumber\\
+    &= \begin{cases}
+        (\psi_0\theta_k+\psi+\theta_{k+1} + \ldots+\psi_{q-k}\theta_q)\sigma_Z^2 \qquad &\text{if } k \leq q\\
+        0 \qquad &\text{if } k > q.
+    \end{cases}
+\end{align}
+We then plug in (\ref{phi expanded equate covariance}) and (\ref{theta expanded equate covariances}) to (\ref{equate covariances}) to get:
+\begin{equation}
+    K_{XX}(k)-\phi_1K_{XX}(k-1)-\ldots-\phi_pK_{XX}(k-p)=c_k \qquad \forall k \geq 0
+\end{equation}
+where
+\begin{equation}
+    c_k = \begin{cases}
+        (\psi_0\theta_k+\psi+\theta_{k+1} + \ldots+\psi_{q-k}\theta_q)\sigma_Z^2 \qquad &\text{if } k \leq q\\
+        0 \qquad &\text{if } k > q.
+    \end{cases}
+\end{equation}
+Remember that $K_{XX}(-k)=K_{XX}(k)$, allowing us to build (\ref{yule-walker matrix}). A benefit of difference equations over polynomial division is that we only calculate $q$ parameters compared to $j$ parameters.
+\subsection{Parameter Estimation}
+We will now discuss the over-looming question at the back of our heads. How do we estimate the parameters $\theta_k$ and $\psi_k$? There are a few ways to go about it, including conditional least squares (LS), and maximum likelihood estimation (MLE). Here, we will present an algorithm for solving the parameters using conditional least squares in an iterative fashion very reminiscent of the optimization algorithm for k-means clustering, the problem in which we divide a set of points into k distinct clusters.
+
+\subsection{Conditional Least Squares}
+As described in the previous subsection, we will use conditional least squares iteratively in order to reach an optimal solution. Our iteration goes as follows:
+
+\begin{enumerate}
+    \item Given current estimations for the parameters $(\phi_{1}, \phi_{2}, ... \theta_{1}, \theta_{2})$, calculate the current residuals from the time series data.
+    \item Calculate each residual as follows: \\
+    $Z_{t} = X_{t} - \mu - \phi_1(X_{t-1} - \mu) - ... - \phi_{p}(X_{t-p} - \mu) - \theta_{1}(Z_{t-1}) - ... - \theta_{q}(Z{t-q})$
+    \item Solve for new optimal parameters, $(\phi_{1}^*, \phi_{2}^*, ... \theta_{1}^*, \theta_{2}^*)$, conditioned on the calculated residuals and observations using least squares, stacking known values into a data matrix and then solving using typical least squares techniques.
+\end{enumerate}
+
+We see that this process can be performed iteratively to further fine tune the residuals and the parameter estimates. Therefore, our entire process begins with initializing some random weights for the $\phi$'s and $\theta$'s, and performing this process repeatedly until convergence. This process is extremely similar to K-means clustering, involving a step fixing some variables, then solving for another parameter that maximizes a value conditioned on those fixed variables. The fixing of variables in K-means clustering is the assignment of points to clusters. The fixing of variables in the ARMA parameter solving is the calculation of residuals. The maximization in K-means clustering is the assignment of cluster centers as the centroid of the points in the cluster. The maximization in ARMA parameter solving is the solving of parameters $\phi$'s and $\theta$'s given the current residuals.
+
+
+\section{Extensions of ARMA}
+\subsection{ARIMA}
+    After deriving ARMA, auto-regressive and moving average, models, we are finally ready to extend to ARIMA. The jump between the two is actually quite small, including only one new step, differencing. 
+    
+    \begin{align*}
+    ARIMA(p, d, q) = (1 - \phi_{1}L - \phi_{2}L^{2} - \phi_{3}L^{3}... - \phi_{p}L^{p}) (1 - L)^{d} y_{t} = c + (1 + \theta_{1} L + \theta_{2} L^{2}... + \theta_{q} L^{q}) \epsilon_{t}
+    \end{align*}
+    
+    The purpose of differencing is to eliminate trends and enforce stationarity in the data, one of the prerequisites for the ARMA model to fit properly to the time series data. Conveniently, we can perform the differencing prior to the ARMA parameter fitting, meaning we make no changes to the estimation of the model parameters, we simply operate on new differenced data.
+    
+\subsection{SARIMA}
+    Sometimes, our data has a seasonality, or cyclical behavior. In this case, ARIMA models are not expressive enough in order to truly model the behavior of the time series. In these instances, we add seasonal terms in order to fully express the time series model.
+    
+    \begin{align*}
+    SARIMA(p, d, q) (P, D, Q)_{m} = (1 - \phi_{1}L - \phi_{2}L^{2} - \phi_{3}L^{3}... - \phi_{p}L^{p}) \\(1 - \Phi_{1}L^{m} - \Phi_{2}L^{2m} - \Phi_{3}L^{3m}... - \Phi_{P}L^{Pm}) (1 - L)^{d} \\(1 - L)^{Dm} y_{t} = c + (1 + \theta_{1} L + \theta_{2} L^{2}... + \theta_{q} L^{q}) \\(1 + \Theta_{1} L^{m} + \Theta_{2} L^{2m}... + \Theta_{Q} L^{Qm}) \epsilon_{t}
+    \end{align*}
+    
+    The SARIMA terms compare current observations against observations one period ago, instead of one time step ago. This applies for both AR terms, I terms, and MA terms. The parameter estimation happens in the same fashion, just with different observations being depended on for a current observation.
+
+\section{Model Section}
+There are several methods to determine the best model among a family of alternatives, i.e. they help us choose $p, q$ that is appropriate for a data set. Like with linear regression, we can fit a polynomial of degree 19 for a training dataset of 20 points - this model will perfectly fit the training dataset but will most likely perform poorly on future values. Similar to ridge regression, in the sense of using fewer parameters, more robust models will use lower degree polynomials. Consequently, the 19-degree polynomial will most likely be more sensitive to noise than a 2-degree polynomial. Therefore, we aim to choose enough model parameters to fit the data well without losing generalization.
+\subsection{Akaike Information Criterion (AIC)}
+The Akaike information criterion (AIC) estimates the quality of models relative to other models of the same data set. It evaluates the log likelihood, $\ell$ of the data based on the number of parameters. The following the the likelihood function:
+\begin{align}\label{mle likelihood}
+    L(X_1, \ldots, X_k; \beta, \sigma^2)&=f(X_1, \ldots, X_k; \beta, \sigma^2) \nonumber\\
+    &= f(X_1;\beta, \sigma^2)\prod_{i=1}^k f(X_i|X_{i-1};\beta, \sigma^2).
+\end{align}
+We take the $\log$ of $L$ to get:
+\begin{equation}\label{log likelihood}
+    \ell(\beta, \sigma^2) = \log f(X_1;\beta, \sigma^2) + \sum_{i=1}^k f(X_i|X_{i-1}; \beta, \sigma^2)
+\end{equation}
+\begin{equation}
+    AIC = -2\log(\ell)+2k
+\end{equation}
+where $k=p+q+2$. The $2$ comes from the mean and noise variance. The first term measures the fit of the model, which is counteracted by $k$ because increasing the number of parameters almost always increases model fit. We choose the model that has the lowest AIC score.
+\subsection{Bayesian Information Criterion (BIC)}
+The Bayesion information criterion performs a similar comparison - it minimizes:
+\begin{equation}
+    BIC =-2\log(\ell) + k\log n
+\end{equation}
+where $n$ is the number of data points. We notice this penalty for more parameters is larger than the penalty of AIC. Consequently, BIC chooses sparser models compared to AIC.
+
 \section{References}
 \url{https://en.wikipedia.org/wiki/White\_noise}\\
 \url{https://www.machinelearningplus.com/machine-learning/bias-variance-tradeoff/}\\
 \url{https://people.duke.edu/~rnau/411diff.htm}\\
 \url{https://www.stat.tamu.edu/~suhasini/teaching673/chapter3.pdf}\\
 \url{http://www.maths.qmul.ac.uk/~bb/TimeSeries/TS_Chapter6_1.pdf}\\
+\url{https://www.stat.berkeley.edu/~aditya/resources/LectureTWO.pdf}\\
 \url{https://www.asc.ohio-state.edu/de-jong.8/note2.pdf}\\
 \url{https://math.unice.fr/~frapetti/CorsoP/Chapitre_4_IMEA_1.pdf}\\
-\url{https://www-jstor-org.libproxy.berkeley.edu/stable/pdf/4615673.pdf?refreqid=excelsior%3A640726649d0edf661655f0d5d3a3e167}
+\url{https://www-jstor-org.libproxy.berkeley.edu/stable/pdf/4615673.pdf?refreqid=excelsior\%3A640726649d0edf661655f0d5d3a3e167}\\
+\url{https://courses.maths.ox.ac.uk/node/view_material/924}
 \end{document}
